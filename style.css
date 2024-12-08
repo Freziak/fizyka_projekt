@@ -1,0 +1,17 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 200px;
+    font-size: 20px;
+}
+
+.main {
+background-color: #7082dc;
+padding: 100px;
+border-radius: 10px;
+}
+
+input {
+    display: block;
+}

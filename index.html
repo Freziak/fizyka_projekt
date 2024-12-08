@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Indukcja</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <script>
+            const wymiar = document.getElementById(pole1)
+            document.write(wymiar)
+        
+    </script>
+    <div class="main">
+        <form>
+            <label for="pole1">Podaj wymiar X</label>
+            <input type="float" id="pole1">
+
+            <label for="pole2">Podaj wymiar Y</label>
+            <input type="float" id="pole2">
+
+            <label for="zwoje">Podaj ilosc zwoji</label>
+            <input type="float" id="zwoje">
+
+            <label for="czestotliwosc">Podaj czestotliwosc w Hz</label>
+            <input type="float" id="czestotliwosc">
+
+            <label for="pole-magnetyczne">Podaj pole magnetyczne</label>
+            <input type="float" id="pole-magnetyczne">
+
+            <button type="submit">Oblicz</button>
+
+            <p id="umax" class="umax">Napiecie maksymalne to:</p>
+            <p id="usk" class="usk">Napiecie skuteczne to:</p>
+        </form>
+    </div>
+</body>
+</html>
