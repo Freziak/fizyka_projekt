@@ -5,35 +5,209 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Indukcja</title>
     <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* Styl dla całej strony */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            height: 100vh;
+            margin: 0;
+            font-size: 20px;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #3a4180, #7082dc);
+            color: #ffffff;
+        }
+
+        /* Styl dla głównego kontenera */
+        .main {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
+            color: #333333;
+            width: 400px;
+        }
+
+        /* Styl dla formularza */
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            margin-top: 10px;
+            font-weight: bold;
+        }
+
+        input {
+            display: block;
+            margin-top: 5px;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #7082dc;
+            color: #ffffff;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #5a66b5;
+        }
+
+        /* Styl dla wyników */
+        .umax, .usk {
+            margin-top: 20px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        span {
+            color: #7082dc;
+        }
+
+        /* Styl dla wykresu */
+        .chart-container {
+            margin-top: 20px;
+            width: 500px;
+            height: 300px;
+        }
+    </style>
 </head>
 <body>
-    <script>
-            const wymiar = document.getElementById(pole1)
-            document.write(wymiar)
-        
-    </script>
     <div class="main">
-        <form>
-            <label for="pole1">Podaj wymiar X</label>
-            <input type="float" id="pole1">
+        <form id="induction-form">
+            <label for="pole1">Podaj wymiar X (w cm):</label>
+            <input type="number" id="pole1" required>
 
-            <label for="pole2">Podaj wymiar Y</label>
-            <input type="float" id="pole2">
+            <label for="pole2">Podaj wymiar Y (w cm):</label>
+            <input type="number" id="pole2" required>
 
-            <label for="zwoje">Podaj ilosc zwoji</label>
-            <input type="float" id="zwoje">
+            <label for="zwoje">Podaj ilość zwojów:</label>
+            <input type="number" id="zwoje" required>
 
-            <label for="czestotliwosc">Podaj czestotliwosc w Hz</label>
-            <input type="float" id="czestotliwosc">
+            <label for="czestotliwosc">Podaj częstotliwość w Hz:</label>
+            <input type="number" id="czestotliwosc" step="0.01" required>
 
-            <label for="pole-magnetyczne">Podaj pole magnetyczne</label>
-            <input type="float" id="pole-magnetyczne">
+            <label for="pole-magnetyczne">Podaj pole magnetyczne (w T):</label>
+            <input type="number" id="pole-magnetyczne" step="0.01" required>
 
-            <button type="submit">Oblicz</button>
-
-            <p id="umax" class="umax">Napiecie maksymalne to:</p>
-            <p id="usk" class="usk">Napiecie skuteczne to:</p>
+            <button type="button" id="calculate-btn">Oblicz</button>
         </form>
+
+        <p id="umax" class="umax">Napięcie maksymalne to: <span id="umax-value"></span></p>
+        <p id="usk" class="usk">Napięcie skuteczne to: <span id="usk-value"></span></p>
     </div>
+
+    <div class="chart-container">
+        <canvas id="voltageChart"></canvas>
+    </div>
+
+    <script>
+        document.getElementById('calculate-btn').addEventListener('click', function() {
+            // Pobranie danych z formularza
+            const pole1 = parseFloat(document.getElementById('pole1').value);
+            const pole2 = parseFloat(document.getElementById('pole2').value);
+            const N = parseInt(document.getElementById('zwoje').value);
+            const F = parseFloat(document.getElementById('czestotliwosc').value);
+            const B = parseFloat(document.getElementById('pole-magnetyczne').value);
+
+            // Stałe
+            const pierwiastek = 1.4142;
+            const pi = 3.1415;
+
+            // Obliczenia
+            const S = (pole1 * pole2) / 10000; // Pole w m^2
+            const omega = 2 * pi * F;
+            const Umax = N * B * S * omega;
+            const Usk = Umax / pierwiastek;
+
+            // Wyświetlenie wyników
+            document.getElementById('umax-value').textContent = Umax.toFixed(2) + ' V';
+            document.getElementById('usk-value').textContent = Usk.toFixed(2) + ' V';
+
+            // Rysowanie wykresu sinusoidalnego
+            const ctx = document.getElementById('voltageChart').getContext('2d');
+
+            // Dane do wykresu
+            const time = Array.from({ length: 100 }, (_, i) => i / 100); // Czas od 0 do 1 sekundy
+            const voltage = time.map(t => Umax * Math.sin(omega * t));
+
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: time.map(t => t.toFixed(2) + ' s'),
+                    datasets: [{
+                        label: 'Napięcie (V)',
+                        data: voltage,
+                        borderColor: '#7082dc',
+                        borderWidth: 2,
+                        fill: false
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                font: {
+                                    size: 14,
+                                    family: 'Arial',
+                                    weight: 'bold'
+                                },
+                                color: '#333'
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Czas (s)',
+                                font: {
+                                    size: 14
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#333'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Napięcie (V)',
+                                font: {
+                                    size: 14
+                                },
+                                color: '#333'
+                            },
+                            ticks: {
+                                font: {
+                                    size: 12
+                                },
+                                color: '#333'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
 </body>
 </html>

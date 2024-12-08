@@ -16,3 +16,5 @@ print(round(Umax,2))
 
 Usk = Umax / pierwiastek
 print(round(Usk, 2))
+
+
