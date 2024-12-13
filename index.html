@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Indukcja</title>
-    <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         /* Styl dla całej strony */
@@ -100,7 +99,7 @@
             <label for="czestotliwosc">Podaj częstotliwość w Hz:</label>
             <input type="number" id="czestotliwosc" step="0.01" required>
 
-            <label for="pole-magnetyczne">Podaj pole magnetyczne (w T):</label>
+            <label for="pole-magnetyczne">Podaj czas (w T):</label>
             <input type="number" id="pole-magnetyczne" step="0.01" required>
 
             <button type="button" id="calculate-btn">Oblicz</button>
@@ -125,7 +124,7 @@
 
             // Stałe
             const pierwiastek = 1.4142;
-            const pi = 3.1415;
+            const pi = Math.PI;
 
             // Obliczenia
             const S = (pole1 * pole2) / 10000; // Pole w m^2
@@ -141,7 +140,7 @@
             const ctx = document.getElementById('voltageChart').getContext('2d');
 
             // Dane do wykresu
-            const time = Array.from({ length: 100 }, (_, i) => i / 100); // Czas od 0 do 1 sekundy
+            const time = Array.from({ length: 200 }, (_, i) => i / 100); // Czas od 0 do 2 sekund
             const voltage = time.map(t => Umax * Math.sin(omega * t));
 
             new Chart(ctx, {
@@ -153,6 +152,7 @@
                         data: voltage,
                         borderColor: '#7082dc',
                         borderWidth: 2,
+                        tension: 0.4, // Smooth curve
                         fill: false
                     }]
                 },
