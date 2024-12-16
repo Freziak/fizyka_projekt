@@ -3,211 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Indukcja</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>Obliczanie napięcia indukowanego</title>
     <style>
-        /* Styl dla całej strony */
         body {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
-            height: 100vh;
-            margin: 0;
-            font-size: 20px;
             font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #3a4180, #7082dc);
-            color: #ffffff;
-        }
-
-        /* Styl dla głównego kontenera */
-        .main {
-            background-color: #ffffff;
-            padding: 40px;
-            border-radius: 10px;
-            box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.25);
-            color: #333333;
-            width: 400px;
-        }
-
-        /* Styl dla formularza */
-        form {
+            background-color: #cfcfd5;
+            margin: 0;
+            padding: 0;
             display: flex;
             flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
         }
-
+        .container {
+            background: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 500px;
+            width: 100%;
+        }
+        h1 {
+            font-size: 1.5rem;
+            text-align: center;
+            color: #333;
+        }
         label {
-            margin-top: 10px;
-            font-weight: bold;
-        }
-
-        input {
             display: block;
-            margin-top: 5px;
-            padding: 8px;
+            margin: 10px 0 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 15px;
             border: 1px solid #ccc;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: 1rem;
         }
-
         button {
-            margin-top: 20px;
+            display: block;
+            width: 100%;
             padding: 10px;
-            background-color: #7082dc;
-            color: #ffffff;
+            background-color: #007BFF;
+            color: white;
             border: none;
             border-radius: 5px;
-            font-size: 16px;
+            font-size: 1rem;
             cursor: pointer;
         }
-
         button:hover {
-            background-color: #5a66b5;
+            background-color: #0056b3;
         }
-
-        /* Styl dla wyników */
-        .umax, .usk {
+        .results {
             margin-top: 20px;
-            font-size: 18px;
-            font-weight: bold;
+            padding: 10px;
+            background: #f9f9f9;
+            border: 1px solid #ddd;
+            border-radius: 5px;
         }
-
-        span {
-            color: #7082dc;
+        .results p {
+            margin: 0;
+            font-size: 1rem;
+            color: #333;
         }
-
-        /* Styl dla wykresu */
-        .chart-container {
+        .plot-container {
             margin-top: 20px;
-            width: 500px;
-            height: 300px;
+            text-align: center;
+        }
+        canvas {
+            max-width: 100%;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="main">
-        <form id="induction-form">
-            <label for="pole1">Podaj wymiar X (w cm):</label>
-            <input type="number" id="pole1" required>
+    <div class="container">
+        <h1>Obliczanie napięcia indukowanego</h1>
 
-            <label for="pole2">Podaj wymiar Y (w cm):</label>
-            <input type="number" id="pole2" required>
+        <label for="numTurns">Liczba zwojów:</label>
+        <input type="number" id="numTurns" placeholder="Podaj liczbę zwojów" required oninput="this.value = Math.max(this.value, 0)">
 
-            <label for="zwoje">Podaj ilość zwojów:</label>
-            <input type="number" id="zwoje" required>
+        <label for="area">Pole powierzchni ramki (m²):</label>
+        <input type="number" id="area" step="0.01" placeholder="Podaj pole powierzchni ramki" required oninput="this.value = Math.max(this.value, 0)">
 
-            <label for="czestotliwosc">Podaj częstotliwość w Hz:</label>
-            <input type="number" id="czestotliwosc" step="0.01" required>
+        <label for="frequency">Częstotliwość obrotu (Hz):</label>
+        <input type="number" id="frequency" step="0.01" placeholder="Podaj częstotliwość obrotu" required oninput="this.value = Math.max(this.value, 0)">
 
-            <label for="pole-magnetyczne">Podaj czas (w T):</label>
-            <input type="number" id="pole-magnetyczne" step="0.01" required>
+        <button onclick="calculateVoltage()">Oblicz napięcie</button>
 
-            <button type="button" id="calculate-btn">Oblicz</button>
-        </form>
+        <div id="results" class="results" style="display: none;">
+            <p id="maxVoltage"></p>
+            <p id="rmsVoltage"></p>
+        </div>
 
-        <p id="umax" class="umax">Napięcie maksymalne to: <span id="umax-value"></span></p>
-        <p id="usk" class="usk">Napięcie skuteczne to: <span id="usk-value"></span></p>
-    </div>
-
-    <div class="chart-container">
-        <canvas id="voltageChart"></canvas>
+        <div class="plot-container">
+            <canvas id="voltagePlot"></canvas>
+        </div>
     </div>
 
     <script>
-        document.getElementById('calculate-btn').addEventListener('click', function() {
-            // Pobranie danych z formularza
-            const pole1 = parseFloat(document.getElementById('pole1').value);
-            const pole2 = parseFloat(document.getElementById('pole2').value);
-            const N = parseInt(document.getElementById('zwoje').value);
-            const F = parseFloat(document.getElementById('czestotliwosc').value);
-            const B = parseFloat(document.getElementById('pole-magnetyczne').value);
+        const B = 1; // Stała wartość indukcji magnetycznej (Tesla)
 
-            // Stałe
-            const pierwiastek = 1.4142;
-            const pi = Math.PI;
+        function calculateVoltage() {
+            const numTurns = parseInt(document.getElementById('numTurns').value);
+            const area = parseFloat(document.getElementById('area').value);
+            const frequency = parseFloat(document.getElementById('frequency').value);
 
-            // Obliczenia
-            const S = (pole1 * pole2) / 10000; // Pole w m^2
-            const omega = 2 * pi * F;
-            const Umax = N * B * S * omega;
-            const Usk = Umax / pierwiastek;
+            if (numTurns > 0 && area > 0 && frequency > 0) {
+                const omega = 2 * Math.PI * frequency;
+                const maxVoltage = numTurns * area * B * omega;
+                const rmsVoltage = maxVoltage / Math.sqrt(2);
 
-            // Wyświetlenie wyników
-            document.getElementById('umax-value').textContent = Umax.toFixed(2) + ' V';
-            document.getElementById('usk-value').textContent = Usk.toFixed(2) + ' V';
+                document.getElementById('maxVoltage').textContent = `Napięcie maksymalne: ${maxVoltage.toFixed(2)} V`;
+                document.getElementById('rmsVoltage').textContent = `Napięcie skuteczne: ${rmsVoltage.toFixed(2)} V`;
+                document.getElementById('results').style.display = 'block';
 
-            // Rysowanie wykresu sinusoidalnego
-            const ctx = document.getElementById('voltageChart').getContext('2d');
+                plotVoltage(maxVoltage, frequency);
+            } else {
+                alert('Proszę wprowadzić poprawne wartości większe od zera.');
+            }
+        }
 
-            // Dane do wykresu
-            const time = Array.from({ length: 200 }, (_, i) => i / 100); // Czas od 0 do 2 sekund
-            const voltage = time.map(t => Umax * Math.sin(omega * t));
+        function plotVoltage(amplitude, frequency) {
+            const ctx = document.getElementById('voltagePlot').getContext('2d');
+            const tau = 1 / frequency;
+            const t = Array.from({ length: 1000 }, (_, i) => i * (2 * tau / 1000));
+            const y = t.map(time => amplitude * Math.sin(2 * Math.PI * frequency * time));
 
             new Chart(ctx, {
                 type: 'line',
                 data: {
-                    labels: time.map(t => t.toFixed(2) + ' s'),
+                    labels: t,
                     datasets: [{
-                        label: 'Napięcie (V)',
-                        data: voltage,
-                        borderColor: '#7082dc',
-                        borderWidth: 2,
-                        tension: 0.4, // Smooth curve
-                        fill: false
+                        label: 'Napięcie sinusoidalne',
+                        data: y,
+                        borderColor: 'blue',
+                        borderWidth: 1,
+                        fill: false,
+                        pointRadius: 0
                     }]
                 },
                 options: {
                     responsive: true,
-                    plugins: {
-                        legend: {
-                            display: true,
-                            labels: {
-                                font: {
-                                    size: 14,
-                                    family: 'Arial',
-                                    weight: 'bold'
-                                },
-                                color: '#333'
-                            }
-                        }
-                    },
                     scales: {
                         x: {
                             title: {
                                 display: true,
-                                text: 'Czas (s)',
-                                font: {
-                                    size: 14
-                                },
-                                color: '#333'
-                            },
-                            ticks: {
-                                font: {
-                                    size: 12
-                                },
-                                color: '#333'
+                                text: 'Czas (s)'
                             }
                         },
                         y: {
                             title: {
                                 display: true,
-                                text: 'Napięcie (V)',
-                                font: {
-                                    size: 14
-                                },
-                                color: '#333'
-                            },
-                            ticks: {
-                                font: {
-                                    size: 12
-                                },
-                                color: '#333'
+                                text: 'Napięcie (V)'
                             }
                         }
                     }
                 }
             });
-        });
+        }
     </script>
-</body>
+</body>`
 </html>
