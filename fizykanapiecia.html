@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Obliczanie Napięcia</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body {
+      font-family: 'Roboto', sans-serif;
+      background-color: #f4f5f7;
+      color: #2c3e50;
+      margin: 0;
+      padding: 20px;
+      line-height: 1.6;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      background-color: #ffffff;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    h1 {
+      text-align: center;
+      color: #3498db;
+      font-size: 2.5em;
+      margin-bottom: 30px;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #34495e;
+      font-size: 1.1em;
+    }
+
+    input {
+      width: 100%;
+      padding: 14px;
+      margin-bottom: 20px;
+      border: 1px solid #dcdfe6;
+      border-radius: 8px;
+      font-size: 1em;
+      background-color: #f7f9fc;
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    input:focus {
+      border-color: #3498db;
+      box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+      outline: none;
+    }
+
+    button {
+      display: block;
+      width: 100%;
+      background-color: #3498db;
+      color: #ffffff;
+      padding: 15px;
+      font-size: 1.2em;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s, transform 0.2s;
+    }
+
+    button:hover {
+      background-color: #2980b9;
+      transform: scale(1.05);
+    }
+
+    .error {
+      color: #e74c3c;
+      font-size: 1em;
+      font-weight: bold;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    canvas {
+      margin-top: 30px;
+      display: block;
+      width: 100%;
+      border: 1px solid #ecf0f1;
+      border-radius: 8px;
+      background-color: #ffffff;
+    }
+
+    .results {
+      margin-top: 30px;
+      font-size: 1.5em;
+      font-weight: bold;
+      text-align: center;
+      color: #2ecc71;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Obliczanie Napięcia</h1>
+    <form id="form1">
+      <label for="N">Liczba zwojów:</label>
+      <input type="number" id="N" step="any" required placeholder="Podaj liczbę zwojów">
+
+      <label for="B">Indukcja magnetyczna:</label>
+      <input type="number" id="B" step="any" required placeholder="Podaj indukcję magnetyczną">
+
+      <label for="S">Pole powierzchni:</label>
+      <input type="number" id="S" step="any" required placeholder="Podaj pole powierzchni">
+
+      <label for="f">Częstotliwość:</label>
+      <input type="number" id="f" step="any" required placeholder="Podaj częstotliwość">
+
+      <p id="error-message" class="error"></p>
+    </form>
+    <button type="button" onclick="calculate()">Oblicz</button>
+    <div class="results" id="results"></div>
+    <canvas id="chart" width="400" height="200"></canvas>
+  </div>
+
+  <script>
+    function calculate() {
+      const N = parseFloat(document.getElementById('N').value);
+      const B = parseFloat(document.getElementById('B').value);
+      const S = parseFloat(document.getElementById('S').value);
+      const f = parseFloat(document.getElementById('f').value);
+      const errorMessage = document.getElementById('error-message');
+
+      if (!N || !B || !S || !f || N <= 0 || B <= 0 || S <= 0 || f <= 0) {
+        errorMessage.textContent = "Wszystkie wartości muszą być dodatnie!";
+        return;
+      }
+      errorMessage.textContent = "";
+
+      const omega = 2 * Math.PI * f;
+      const Vmax = N * B * S * omega;
+      const Vsk = Vmax / Math.sqrt(2);
+      const T = 1 / f;
+
+      const time = [];
+      const voltage = [];
+      const steps = 100;
+      const totalPoints = steps * 2;
+      for (let i = 0; i <= totalPoints; i++) {
+        const t = i * (T / steps);
+        time.push(t);
+        voltage.push(Vmax * Math.sin(omega * t));
+      }
+
+      const ctx = document.getElementById('chart').getContext('2d');
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: time,
+          datasets: [
+            {
+              label: 'Przebieg napięcia',
+              data: voltage,
+              borderColor: '#3498db',
+              backgroundColor: 'rgba(52, 152, 219, 0.2)',
+              borderWidth: 2,
+              pointRadius: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          scales: {
+            x: {
+              type: 'linear',
+              position: 'bottom',
+              title: {
+                display: true,
+                text: 'Czas [s]',
+              },
+            },
+            y: {
+              beginAtZero: false,
+              title: {
+                display: true,
+                text: 'Napięcie [V]',
+              },
+            },
+          },
+        },
+      });
+
+      document.getElementById('results').textContent = `Vmax: ${Vmax.toFixed(2)} V, Vsk: ${Vsk.toFixed(2)} V`;
+    }
+  </script>
+</body>
+</html>
